@@ -1,0 +1,30 @@
+[Unit]
+Description=Feed My WLED audio-reactive bridge
+After=network.target shairport-sync.service
+# BindsTo guarantees shairport-sync is running (and has created + opened the FIFO
+# for writing) before systemd opens it for reading via StandardInput=.
+# It also stops this service automatically when shairport-sync stops.
+BindsTo=shairport-sync.service
+
+[Service]
+Type=simple
+# Run as the user who owns the repo — change to match your system
+User=pi
+
+# Must point to the directory containing feed_my_wled.conf
+WorkingDirectory=/home/pi/feed_my_wled
+
+# systemd opens the FIFO and connects it to the process stdin before exec.
+# Opening a FIFO for reading blocks until a writer is attached — BindsTo above
+# ensures shairport-sync (the writer) is already running when this happens.
+StandardInput=file:/tmp/shairport-sync-audio
+
+ExecStart=uv run feed_my_wled.py
+
+# Restart on crash; do not restart on clean exit (e.g. pipe closed normally).
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target

@@ -105,5 +105,54 @@ Dependencies are managed with [uv](https://docs.astral.sh/uv/). Install uv once,
    ```
    Alternatively, use Shairport-Sync with a pipe backend (same as the Mac setup above) and pipe `/tmp/shairport-sync-audio` instead.
 
+## Setup (as a systemd service)
+
+A `feed_my_wled.service` unit file is included in the repository. It manages the process lifetime and wires up the audio pipe automatically.
+
+### With Shairport-Sync (recommended)
+
+Shairport-Sync creates the FIFO and holds it open for writing while it runs. The service uses `BindsTo=shairport-sync.service` so that:
+- feed_my_wled only starts after Shairport-Sync is up (and the FIFO exists and has a writer).
+- feed_my_wled stops automatically when Shairport-Sync stops.
+
+1. Open `feed_my_wled.service` and update these two lines to match your system:
+   ```ini
+   User=pi
+   WorkingDirectory=/home/pi/feed_my_wled
+   ```
+2. Edit `feed_my_wled.conf` with your WLED device’s IP address.
+3. Install and enable the service:
+   ```sh
+   sudo cp feed_my_wled.service /etc/systemd/system/
+   sudo systemctl daemon-reload
+   sudo systemctl enable --now feed_my_wled
+   ```
+4. Check status and follow logs:
+   ```sh
+   sudo systemctl status feed_my_wled
+   journalctl -u feed_my_wled -f
+   ```
+
+### With a PulseAudio loopback sink (e.g. shairplay)
+
+If your audio source does not write to a named pipe natively, route it through a PulseAudio loopback sink instead. Before installing the service, edit `feed_my_wled.service`:
+
+- Remove the `BindsTo=shairport-sync.service` and `After=... shairport-sync.service` lines.
+- Change `StandardInput=` to point at the loopback FIFO:
+  ```ini
+  StandardInput=file:/tmp/wled
+  ```
+- Add an `ExecStartPre=` line to create the FIFO if it does not exist yet:
+  ```ini
+  ExecStartPre=/bin/bash -c ‘test -p /tmp/wled || mkfifo -m 660 /tmp/wled’
+  ```
+
+Then load the loopback sink (add this to your session startup or a separate service):
+```sh
+pactl load-module module-pipe-sink sink_name=wled file=/tmp/wled format=s16le rate=44100 channels=2
+```
+
+Install and enable as above. Set `sample_rate = 44100` in `feed_my_wled.conf` when using this approach.
+
 ### About Me
 This is my first project on GitHub and also my first "real" project written in Python, a language I’ve never used before. So, if you see something weird or unusual, please have mercy and let me know how I can improve. Regards, Chris
