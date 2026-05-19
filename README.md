@@ -34,14 +34,26 @@ To be honest, I know it will work but haven’t tested it yet. Here are some hin
 * `buffer_size`: Default is 163840, creating a delay of ~1.5 seconds. Adjust this variable for perfect synchronization. Higher values result in more delay.
 * `chunk_size`: Bytes read by the script at once. Higher values improve mean calculations and reduce network bandwidth usage. The default is 8192, resulting in ~25 packets per second, which is sufficient for a fluid experience.
 
-## Setup (on a Mac)
-I recommend using Homebrew for all installations.
+## Dependencies
 
-1. Install Python 3 and its dependencies (if not already installed):
-   * numpy
-   * pyaudio
-2. Download and install Shairport-Sync ([Shairport-Sync](https://github.com/mikebrady/shairport-sync)) on your Mac.
-3. Edit the Shairport-Sync config file (`/usr/local/etc/shairport-sync/shairport-sync.conf` on Mac) as follows:
+The only external dependency is [numpy](https://numpy.org/). Everything else uses the Python standard library.
+
+Dependencies are managed with [uv](https://docs.astral.sh/uv/). Install uv once, then `uv sync` handles the rest — no manual pip or virtualenv management needed.
+
+## Setup (on a Mac)
+
+1. Install [uv](https://docs.astral.sh/uv/getting-started/installation/) if you don't have it:
+   ```sh
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+2. Clone this repository and install dependencies:
+   ```sh
+   git clone https://github.com/yonk42/feed_my_wled.git
+   cd feed_my_wled
+   uv sync
+   ```
+3. Download and install Shairport-Sync ([Shairport-Sync](https://github.com/mikebrady/shairport-sync)) on your Mac.
+4. Edit the Shairport-Sync config file (`/usr/local/etc/shairport-sync/shairport-sync.conf` on Mac) as follows:
 
 ```json
 {
@@ -50,8 +62,7 @@ I recommend using Homebrew for all installations.
     "output_backend": "pipe",
     "port": 6000,
     "ignore_volume_control": "no",
-    "audio_backend_latency_offset_in_seconds": 0.0,
-    "run_this_before_play_begins": "<path_to_your/feed_my_wled.py>"
+    "audio_backend_latency_offset_in_seconds": 0.0
   },
   "pipe": {
     "name": "/tmp/shairport-sync-audio"
@@ -59,10 +70,13 @@ I recommend using Homebrew for all installations.
 }
 ```
 
-4. Start Shairport (`-d` as daemon, `-k` to kill it): `shairport-sync -d`
-5. Clone or download `feed_my_wled` and save it somewhere on your Mac.
-6. Pipe the stream to `feed_my_wled.py`: `cat /tmp/shairport-sync-audio | ./feed_my_wled.py`
-7. Configure your WLED device:
+5. Start Shairport (`-d` as daemon, `-k` to kill it): `shairport-sync -d`
+6. Edit `feed_my_wled.conf` with your WLED device's IP address.
+7. Pipe the stream to `feed_my_wled.py`:
+   ```sh
+   cat /tmp/shairport-sync-audio | uv run feed_my_wled.py
+   ```
+8. Configure your WLED device:
    * Settings → WiFi: Disable WiFi sleep: OFF.
    * Settings → Sync → Realtime: Enable Receive UDP Realtime.
    * Settings → Usermod → AudioReactive: Enabled ON.
@@ -73,8 +87,23 @@ I recommend using Homebrew for all installations.
 
 ## Setup (on Linux)
 
-# `pactl load-module module-pipe-sink sink_name=wled file=/tmp/wled format=s16le rate=44100 channels=1`
-# `cat /tmp/wled | ./feed_my_wled.py`
+1. Install [uv](https://docs.astral.sh/uv/getting-started/installation/):
+   ```sh
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   ```
+2. Clone this repository and install dependencies:
+   ```sh
+   git clone https://github.com/yonk42/feed_my_wled.git
+   cd feed_my_wled
+   uv sync
+   ```
+3. Edit `feed_my_wled.conf` with your WLED device's IP address and set `sample_rate = 44100` if using a standard audio source.
+4. Create a PulseAudio loopback sink and pipe it to `feed_my_wled.py`:
+   ```sh
+   pactl load-module module-pipe-sink sink_name=wled file=/tmp/wled format=s16le rate=44100 channels=2
+   cat /tmp/wled | uv run feed_my_wled.py
+   ```
+   Alternatively, use Shairport-Sync with a pipe backend (same as the Mac setup above) and pipe `/tmp/shairport-sync-audio` instead.
 
 ### About Me
 This is my first project on GitHub and also my first "real" project written in Python, a language I’ve never used before. So, if you see something weird or unusual, please have mercy and let me know how I can improve. Regards, Chris

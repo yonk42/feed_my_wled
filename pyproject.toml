@@ -1,0 +1,9 @@
+[project]
+name = "feed-my-wled"
+version = "1.0.0"
+description = "Transforms an audio stream to feed WLED over the air using its audio-reactive feature"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "numpy",
+]
