@@ -1,6 +1,8 @@
 # Feed My WLED
 A Python script that transforms an audio stream to feed WLED over the air using its audio-reactive feature.
 
+> This is a fork of [yonk42/feed_my_wled](https://github.com/yonk42/feed_my_wled) with bug fixes, stereo audio support, systemd service integration, and uv dependency management.
+
 ## Why?
 Version 0.15 ("Kösen") of [WLED](https://github.com/Aircoookie/WLED.git) comes with a built-in audio-reactive feature, which was previously a fork. But how can you use it? At first glance, all I found was usage via analog/digital microphones or wired add-ons. Really? That was never an option for me because I don’t want background noise displayed on my LED strip, and I’m certainly not going to lay another cable around the room. After digging into the source code, it turns out WLED accepts specialized UDP packets (WARSL2 Protocol). On Windows, you may use this: [WledSRServer](https://github.com/Victoare/SR-WLED-audio-server-win). But what if you use Mac or Linux? That’s why I created this script, which can be fed with an audio stream and outputs the right data as a network UDP stream to your WLED strip.
 
@@ -11,8 +13,7 @@ Version 0.15 ("Kösen") of [WLED](https://github.com/Aircoookie/WLED.git) comes 
 * WLED receives your stream and reacts to audio by choosing sound-reactive effects.
 
 ## Working Principle on Linux
-To be honest, I know it will work but haven’t tested it yet. Here are some hints that might help:
-* Install Shairport-Sync (or a loopback device) and play audio through it.
+* Install Shairport-Sync (or configure a PulseAudio loopback sink) and play audio through it.
 * Create a FIFO stream and pipe it to `feed_my_wled`.
 
 ## How It Works
@@ -157,5 +158,3 @@ pactl load-module module-pipe-sink sink_name=wled file=/tmp/wled format=s16le ra
 
 Install and enable as above. Set `sample_rate = 44100` in `feed_my_wled.conf` when using this approach.
 
-### About Me
-This is my first project on GitHub and also my first "real" project written in Python, a language I’ve never used before. So, if you see something weird or unusual, please have mercy and let me know how I can improve. Regards, Chris
