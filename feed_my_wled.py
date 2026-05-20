@@ -1,11 +1,17 @@
 #!/usr/bin/env python3
 
 import sys
+import signal
 import configparser
 import socket
 import struct
 import numpy as np
 from collections import deque
+
+def _handle_sigterm(signum, frame):
+    raise KeyboardInterrupt
+
+signal.signal(signal.SIGTERM, _handle_sigterm)
 
 # load preferences file
 config = configparser.ConfigParser()
