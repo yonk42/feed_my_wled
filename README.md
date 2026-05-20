@@ -31,8 +31,11 @@ To be honest, I know it will work but haven’t tested it yet. Here are some hin
 * `WLED_IP_ADDRESS`: IP address of your WLED device.
 * `WLED_UDP_PORT`: Port (default is 11988).
 * `sample_rate`: Sample rate of your audio stream. Shairport-Sync’s default is 88200 (it took me hours to figure this out!).
+* `channels`: Number of audio channels in the input stream (`1` = mono, `2` = stereo). Shairport-Sync and PulseAudio both produce stereo by default, so the default is `2`. Multichannel input is mixed down to mono before FFT analysis.
 * `buffer_size`: Default is 163840, creating a delay of ~1.5 seconds. Adjust this variable for perfect synchronization. Higher values result in more delay.
 * `chunk_size`: Bytes read by the script at once. Higher values improve mean calculations and reduce network bandwidth usage. The default is 8192, resulting in ~25 packets per second, which is sufficient for a fluid experience.
+
+The config file path defaults to `feed_my_wled.conf` in the current directory. Pass `--config /path/to/feed_my_wled.conf` to use a different location.
 
 ## Dependencies
 

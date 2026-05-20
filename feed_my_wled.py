@@ -2,6 +2,7 @@
 
 import sys
 import signal
+import argparse
 import configparser
 import socket
 import struct
@@ -13,9 +14,13 @@ def _handle_sigterm(signum, frame):
 
 signal.signal(signal.SIGTERM, _handle_sigterm)
 
-# load preferences file
+parser = argparse.ArgumentParser(description="Feed WLED with real-time audio-reactive data")
+parser.add_argument("--config", default="feed_my_wled.conf", metavar="PATH",
+                    help="Path to config file (default: feed_my_wled.conf)")
+args = parser.parse_args()
+
 config = configparser.ConfigParser()
-config.read("feed_my_wled.conf")
+config.read(args.config)
 
 #load preferences
 WLED_IP_ADDRESS = config.get("WLED", "WLED_IP_ADDRESS")
