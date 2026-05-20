@@ -17,6 +17,7 @@ WLED_UDP_PORT = config.getint("WLED", "WLED_UDP_PORT")
 sample_rate = config.getint("Audio", "sample_rate")
 buffer_size = config.getint("Audio", "buffer_size")
 chunk_size = config.getint("Audio", "chunk_size")
+channels = config.getint("Audio", "channels")
 
 # def vars
 previous_smoothed_level = 0.0
@@ -27,7 +28,7 @@ udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 ## functions
 # calculating fft
-def calculate_fft(audio_chunk, sample_rate):
+def calculate_fft(audio_chunk, sample_rate, channels=1):
     """
     Calc FFT for a Audioblock
     :param audio_chunk: Audiodata as Byte-Array.
@@ -37,6 +38,8 @@ def calculate_fft(audio_chunk, sample_rate):
     try:
         # Convert to a numpy-Array
         audio_data = np.frombuffer(audio_chunk, dtype=np.int16)
+        if channels > 1:
+            audio_data = audio_data.reshape(-1, channels).mean(axis=1).astype(np.int16)
 
         # Calc Peak (Raw Level and Peak Level)
         raw_level = np.mean(np.abs(audio_data))
@@ -122,7 +125,7 @@ def stream_audio_to_wled():
             combined_data = b"".join(ring_buffer)
 
             # Calc FFT and Peaks with buffersize
-            fft_result = calculate_fft(combined_data[:chunk_size], sample_rate)
+            fft_result = calculate_fft(combined_data[:chunk_size], sample_rate, channels)
             if fft_result[0] is None:
                 print("Unvalid FFT-Datas, skip actual block.")
                 continue
