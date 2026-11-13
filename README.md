@@ -28,7 +28,7 @@ To be honest, I know it will work but haven’t tested it yet. Here are some hin
 * Sends it to any WLED device on the same network (ESP32 recommended as a receiver).
 
 ## Preferences
-* `WLED_IP_ADDRESS`: IP address of your WLED device.
+* `WLED_IP_ADDRESS`: IP address of your WLED device. Several devices can be given, separated by commas; each gets the same stream.
 * `WLED_UDP_PORT`: Port (default is 11988).
 * `sample_rate`: Sample rate of your audio stream. Shairport-Sync’s default is 88200 (it took me hours to figure this out!).
 * `buffer_size`: Default is 163840, creating a delay of ~1.5 seconds. Adjust this variable for perfect synchronization. Higher values result in more delay.

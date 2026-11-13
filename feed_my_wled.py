@@ -23,7 +23,8 @@ if not config.read(args.config):
     sys.exit(f"Cannot read preferences file: {args.config}")
 
 #load preferences
-WLED_IP_ADDRESS = config.get("WLED", "WLED_IP_ADDRESS")
+# one or more targets, separated by commas and/or spaces
+WLED_IP_ADDRESSES = config.get("WLED", "WLED_IP_ADDRESS").replace(",", " ").split()
 WLED_UDP_PORT = config.getint("WLED", "WLED_UDP_PORT")
 sample_rate = config.getint("Audio", "sample_rate")
 buffer_size = config.getint("Audio", "buffer_size")
@@ -33,8 +34,10 @@ chunk_size = config.getint("Audio", "chunk_size")
 previous_smoothed_level = 0.0
 ring_buffer = deque(maxlen=buffer_size // chunk_size)  # Ringpuffer für Blöcke (standardmäßig leer)
 
-# resolve the target once, not on every packet (matters for hostnames like wled.local)
-WLED_ADDRESS = (socket.gethostbyname(WLED_IP_ADDRESS), WLED_UDP_PORT)
+# resolve the targets once, not on every packet (matters for hostnames like wled.local)
+if not WLED_IP_ADDRESSES:
+    sys.exit("WLED_IP_ADDRESS is empty")
+WLED_ADDRESSES = [(socket.gethostbyname(host), WLED_UDP_PORT) for host in WLED_IP_ADDRESSES]
 
 # create socket
 udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -114,11 +117,13 @@ def create_udp_packet(fft_values, raw_level, smoothed_level, peak_level, fft_mag
     return udp_packet
 
 def send(packet):
-    """Send a packet to WLED; an unreachable device must never stop the audio loop"""
-    try:
-        udp_socket.sendto(packet, WLED_ADDRESS)
-    except OSError:
-        pass
+    """Send a packet to every WLED; an unreachable device must never stop the audio loop
+    or keep the other devices from getting their packet"""
+    for address in WLED_ADDRESSES:
+        try:
+            udp_socket.sendto(packet, address)
+        except OSError:
+            pass
 
 def reset_buffer():
     """Fill the delay buffer with silence"""
@@ -144,7 +149,8 @@ def stream_audio_to_wled():
     global previous_smoothed_level
 
     try:
-        print(f"Start Pipe to WLED at ({WLED_ADDRESS[0]}:{WLED_ADDRESS[1]})...", flush=True)
+        targets = ", ".join(f"{host}:{port}" for host, port in WLED_ADDRESSES)
+        print(f"Start Pipe to WLED at ({targets})...", flush=True)
 
         for stream in read_streams():
             reset_buffer()
