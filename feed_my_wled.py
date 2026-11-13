@@ -113,6 +113,13 @@ def create_udp_packet(fft_values, raw_level, smoothed_level, peak_level, fft_mag
         float(fft_peak_frequency))  # FFT Major Peak (4 Bytes Float)
     return udp_packet
 
+def send(packet):
+    """Send a packet to WLED; an unreachable device must never stop the audio loop"""
+    try:
+        udp_socket.sendto(packet, WLED_ADDRESS)
+    except OSError:
+        pass
+
 def reset_buffer():
     """Fill the delay buffer with silence"""
     ring_buffer.clear()
@@ -165,10 +172,10 @@ def stream_audio_to_wled():
 
                 # Create UDP-Paket and send it to WLED
                 udp_packet = create_udp_packet(fft_data, raw_level, smoothed_level, peak_level, fft_magnitude_sum, fft_peak_frequency)
-                udp_socket.sendto(udp_packet, WLED_ADDRESS)
+                send(udp_packet)
 
             # stream ended (playback stopped): tell WLED it is quiet now
-            udp_socket.sendto(create_udp_packet([0] * 16, 0, 0, 0, 0, 0), WLED_ADDRESS)
+            send(create_udp_packet([0] * 16, 0, 0, 0, 0, 0))
 
     except KeyboardInterrupt:
         print("Audiostreaming closed.")
