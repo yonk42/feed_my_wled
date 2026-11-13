@@ -73,8 +73,22 @@ I recommend using Homebrew for all installations.
 
 ## Setup (on Linux)
 
-# `pactl load-module module-pipe-sink sink_name=wled file=/tmp/wled format=s16le rate=44100 channels=1`
-# `cat /tmp/wled | ./feed_my_wled.py`
+Anything that can produce raw `s16le` audio on a FIFO works:
+
+```sh
+pactl load-module module-pipe-sink sink_name=wled file=/tmp/wled format=s16le rate=44100 channels=1
+./feed_my_wled.py --input /tmp/wled
+```
+
+`--input` opens the FIFO itself and reopens it whenever the writer reconnects,
+so it can run as a service. Without it the script reads stdin, as before.
+`--config <file>` selects the preferences file (default: `feed_my_wled.conf`
+in the current directory). When the stream ends, one silent packet is sent so
+the LEDs go quiet.
+
+For a Raspberry Pi running shairport-sync, see
+[rpi-airplay](https://github.com/yonk42/rpi-airplay): setting `wled.target` for a
+room installs and wires this script up automatically.
 
 ### About Me
 This is my first project on GitHub and also my first "real" project written in Python, a language I’ve never used before. So, if you see something weird or unusual, please have mercy and let me know how I can improve. Regards, Chris
