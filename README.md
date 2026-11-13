@@ -28,7 +28,7 @@ To be honest, I know it will work but haven’t tested it yet. Here are some hin
 * Sends it to any WLED device on the same network (ESP32 recommended as a receiver).
 
 ## Preferences
-* `WLED_IP_ADDRESS`: IP address of your WLED device.
+* `WLED_IP_ADDRESS`: IP address of your WLED device. Several devices can be given, separated by commas; each gets the same stream.
 * `WLED_UDP_PORT`: Port (default is 11988).
 * `sample_rate`: Sample rate of your audio stream. Shairport-Sync’s default is 88200 (it took me hours to figure this out!).
 * `buffer_size`: Default is 163840, creating a delay of ~1.5 seconds. Adjust this variable for perfect synchronization. Higher values result in more delay.
@@ -73,8 +73,22 @@ I recommend using Homebrew for all installations.
 
 ## Setup (on Linux)
 
-# `pactl load-module module-pipe-sink sink_name=wled file=/tmp/wled format=s16le rate=44100 channels=1`
-# `cat /tmp/wled | ./feed_my_wled.py`
+Anything that can produce raw `s16le` audio on a FIFO works:
+
+```sh
+pactl load-module module-pipe-sink sink_name=wled file=/tmp/wled format=s16le rate=44100 channels=1
+./feed_my_wled.py --input /tmp/wled
+```
+
+`--input` opens the FIFO itself and reopens it whenever the writer reconnects,
+so it can run as a service. Without it the script reads stdin, as before.
+`--config <file>` selects the preferences file (default: `feed_my_wled.conf`
+in the current directory). When the stream ends, one silent packet is sent so
+the LEDs go quiet.
+
+For a Raspberry Pi running shairport-sync, see
+[rpi-airplay](https://github.com/yonk42/rpi-airplay): setting `wled.target` for a
+room installs and wires this script up automatically.
 
 ### About Me
 This is my first project on GitHub and also my first "real" project written in Python, a language I’ve never used before. So, if you see something weird or unusual, please have mercy and let me know how I can improve. Regards, Chris
